@@ -15,9 +15,8 @@ let velocityY = 0;
 let gameOver = false;
 let gameLoop;
 
-// High Scores
-let highScores = JSON.parse(localStorage.getItem("highScores")) || [];
-const maxHighScores = 10;
+// Initialize as empty array; fetchHighScores will populate from API
+let highScores = [];
 
 // Start Game
 function startGame() {
@@ -107,33 +106,45 @@ function displayHighScores() {
 
 
 // Handle Game Over and High Scores
-function handleGameOver() {
+// Handle Game Over and High Scores
+async function handleGameOver() {
     drawGameOver();  // Display the Game Over message
     const score = snake.length - 1;  // Calculate the score
 
-    // Check if score qualifies for top 10
-    const lowestHighScore = highScores[highScores.length - 1]?.score || 0;
-    if (highScores.length < maxHighScores || score > lowestHighScore) {
-        const playerName = prompt("New High Score! Enter your name:", "Player");
-    
-        // Only submit if player entered a name
-        if (playerName !== null && playerName.trim() !== "") {
-            const newScore = { name: playerName, score: score };
-    
-            // Add and sort high scores
-            highScores.push(newScore);
-            highScores.sort((a, b) => b.score - a.score);
-            highScores = highScores.slice(0, maxHighScores);
-    
-            // Save to localStorage
-            localStorage.setItem("highScores", JSON.stringify(highScores));
-            submitScore(playerName, score);
-            displayHighScores();
+    try {
+        // Fetch the latest high scores from DynamoDB
+        const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/highscores';
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
+
+        const data = await response.json();
+        const currentHighScores = data.highScores || [];
+
+        // Determine if the score qualifies for the top 10
+        const lowestHighScore = currentHighScores.length >= 10
+            ? Math.min(...currentHighScores.map(s => s.Score || s.score))
+            : 0;
+
+        if (currentHighScores.length < 10 || score > lowestHighScore) {
+            const playerName = prompt("New High Score! Enter your name:", "Player");
+
+            if (playerName !== null && playerName.trim() !== "") {
+                await submitScore(playerName, score);
+                alert('Score submitted successfully!');
+                fetchHighScores(); // Refresh leaderboard after successful submission
+            }
+        } else {
+            alert("Game Over! Unfortunately, your score didn’t make it to the top 10.");
+        }
+    } catch (error) {
+        console.error('Error handling game over:', error);
+        alert('An error occurred while processing the high scores.');
     }
-    
-    
 }
+
 
 // Draw Game Over Message
 function drawGameOver() {
@@ -168,12 +179,12 @@ async function submitScore(playerName, score) {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/score';
 
     const payload = {
-        playerName,
-        score
+        playerName: playerName,
+        score: Number(score)  // Ensure score is a number
     };
 
-    // Log payload before sending
-    console.log("Submitting Score Payload:", payload); 
+    // Log the payload before sending
+    console.log("Submitting Score Payload:", payload);
 
     try {
         const response = await fetch(apiUrl, {
@@ -184,33 +195,20 @@ async function submitScore(playerName, score) {
             body: JSON.stringify(payload)
         });
 
-        // Log full response object for debugging
-        console.log('Raw Response:', response);
-
-        // Check if response is JSON before parsing
-        let result;
-        try {
-            result = await response.json();
-        } catch (jsonError) {
-            console.error("Error parsing JSON from response:", jsonError);
-            result = { message: "Invalid JSON response" };
-        }
-
+        const result = await response.json();
         console.log('Score submission result:', result);
 
         if (response.ok) {
-            console.log(`Score submitted successfully! Status: ${response.status}`);
-            alert('Score submitted successfully!');
+            console.log('Score submitted successfully!');
         } else {
-            console.error(`Error submitting score (Status ${response.status}): ${result.message}`);
+            console.error(`Error submitting score: ${result.message}`);
             alert(`Error submitting score: ${result.message}`);
         }
     } catch (error) {
         console.error('Network error submitting score:', error);
-        alert('Failed to submit score due to network error. Please try again.');
+        alert('Failed to submit score. Please try again.');
     }
 }
-
 
 async function fetchHighScores() {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/highscores';
@@ -223,23 +221,27 @@ async function fetchHighScores() {
         }
 
         const data = await response.json();
-        console.log('Fetched High Scores:', data.highScores);
+        console.log('Fetched High Scores Raw:', data.highScores); // Log raw response
 
-        highScores = data.highScores.map(score => ({
-            name: score.playerName,
-            score: score.score !== undefined ? score.score : score.Score // Fallback
-        }));
-        displayHighScores();
+        // Map and parse scores properly
+        highScores = data.highScores.map(score => {
+            const playerName = score.playerName || "Unknown";
+            const playerScore = typeof score.score === 'number' ? score.score : parseInt(score.score, 10) || 0;
+
+            console.log(`Parsed Score - Name: ${playerName}, Score: ${playerScore}`);
+
+            return {
+                name: playerName,
+                score: playerScore
+            };
+        });
+
+        displayHighScores(); // Render leaderboard in DOM
     } catch (error) {
         console.error('Error fetching high scores:', error);
         alert('Failed to fetch high scores. Check console for details.');
     }
 }
-
-
-  
-
-
 
 // Start the Game
 fetchHighScores();

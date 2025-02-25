@@ -97,12 +97,13 @@ function displayHighScores() {
     const highScoreList = document.getElementById("highScoreList");
     highScoreList.innerHTML = "<h2>High Scores</h2><ul></ul>";  // Clear and reset list
 
-    highScores.forEach(score => {
+    highScores.forEach((score, index) => {
         const li = document.createElement("li");
-        li.textContent = `${score.name}: ${score.score}`;
+        li.textContent = `${index + 1}. ${score.name}: ${score.score}`;
         highScoreList.querySelector("ul").appendChild(li);
     });
 }
+
 
 
 // Handle Game Over and High Scores
@@ -114,17 +115,23 @@ function handleGameOver() {
     const lowestHighScore = highScores[highScores.length - 1]?.score || 0;
     if (highScores.length < maxHighScores || score > lowestHighScore) {
         const playerName = prompt("New High Score! Enter your name:", "Player");
-        const newScore = { name: playerName || "Anonymous", score: score };
-
-        // Add and sort high scores
-        highScores.push(newScore);
-        highScores.sort((a, b) => b.score - a.score);
-        highScores = highScores.slice(0, maxHighScores);
-
-        // Save to localStorage
-        localStorage.setItem("highScores", JSON.stringify(highScores));
-        displayHighScores();
+    
+        // Only submit if player entered a name
+        if (playerName !== null && playerName.trim() !== "") {
+            const newScore = { name: playerName, score: score };
+    
+            // Add and sort high scores
+            highScores.push(newScore);
+            highScores.sort((a, b) => b.score - a.score);
+            highScores = highScores.slice(0, maxHighScores);
+    
+            // Save to localStorage
+            localStorage.setItem("highScores", JSON.stringify(highScores));
+            submitScore(playerName, score);
+            displayHighScores();
+        }
     }
+    
     
 }
 
@@ -157,6 +164,84 @@ document.addEventListener("keydown", (e) => {
     }
 });
 
+async function submitScore(playerName, score) {
+    const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/score';
+
+    const payload = {
+        playerName,
+        score
+    };
+
+    // Log payload before sending
+    console.log("Submitting Score Payload:", payload); 
+
+    try {
+        const response = await fetch(apiUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        // Log full response object for debugging
+        console.log('Raw Response:', response);
+
+        // Check if response is JSON before parsing
+        let result;
+        try {
+            result = await response.json();
+        } catch (jsonError) {
+            console.error("Error parsing JSON from response:", jsonError);
+            result = { message: "Invalid JSON response" };
+        }
+
+        console.log('Score submission result:', result);
+
+        if (response.ok) {
+            console.log(`Score submitted successfully! Status: ${response.status}`);
+            alert('Score submitted successfully!');
+        } else {
+            console.error(`Error submitting score (Status ${response.status}): ${result.message}`);
+            alert(`Error submitting score: ${result.message}`);
+        }
+    } catch (error) {
+        console.error('Network error submitting score:', error);
+        alert('Failed to submit score due to network error. Please try again.');
+    }
+}
+
+
+async function fetchHighScores() {
+    const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/highscores';
+
+    try {
+        const response = await fetch(apiUrl);
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Fetched High Scores:', data.highScores);
+
+        highScores = data.highScores.map(score => ({
+            name: score.playerName,
+            score: score.score !== undefined ? score.score : score.Score // Fallback
+        }));
+        displayHighScores();
+    } catch (error) {
+        console.error('Error fetching high scores:', error);
+        alert('Failed to fetch high scores. Check console for details.');
+    }
+}
+
+
+  
+
+
+
 // Start the Game
+fetchHighScores();
 startGame();  
 displayHighScores();

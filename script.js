@@ -133,7 +133,6 @@ async function handleGameOver() {
 
             if (playerName !== null && playerName.trim() !== "") {
                 await submitScore(playerName, score);
-                alert('Score submitted successfully!');
                 fetchHighScores(); // Refresh leaderboard after successful submission
             }
         } else {

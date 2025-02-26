@@ -198,7 +198,7 @@ async function submitScore(playerName, score) {
         console.log('Score submission result:', result);
 
         if (response.ok) {
-            console.log('Score submitted successfully!');
+            return;
         } else {
             console.error(`Error submitting score: ${result.message}`);
             alert(`Error submitting score: ${result.message}`);

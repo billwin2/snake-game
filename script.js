@@ -4,6 +4,9 @@ const ctx = canvas.getContext("2d");
 const boardWidth = canvas.width;
 const boardHeight = canvas.height;
 const tileSize = 25;
+const highScoresOverlay = document.getElementById('highScoresOverlay');
+const highScoresList = document.getElementById('highScoresList');
+
 
 // Snake and Food
 let snake = [{ x: 5, y: 5 }];
@@ -20,6 +23,12 @@ let highScores = [];
 
 // Start Game
 function startGame() {
+    console.log("Stating game");
+
+    // Force hide overlay
+    highScoresOverlay.style.display = 'none';
+    highScoresOverlay.classList.add('hidden'); // Hide overlay
+
     snake = [{ x: 5, y: 5 }];
     velocityX = 1;
     velocityY = 0;
@@ -108,6 +117,7 @@ function displayHighScores() {
 // Handle Game Over and High Scores
 // Handle Game Over and High Scores
 async function handleGameOver() {
+    clearInterval(gameLoop); // Stop the Game Loop
     drawGameOver();  // Display the Game Over message
     const score = snake.length - 1;  // Calculate the score
 
@@ -122,10 +132,23 @@ async function handleGameOver() {
 
         const data = await response.json();
         const currentHighScores = data.highScores || [];
+        displayHighScoresOverlay(currentHighScores);
+        highScoresOverlay.classList.remove('hidden');
+
+        // Display high scores in the overlay
+        displayHighScoresOverlay(currentHighScores);
+        // Show overlay
+        if (highScoresOverlay) {
+            highScoresOverlay.style.display = 'block';
+            highScoresOverlay.classList.remove('hidden');
+        } else {
+            console.error("Error: #highScoresOverlay element not found in the DOM.");
+        }
+        
 
         // Determine if the score qualifies for the top 10
         const lowestHighScore = currentHighScores.length >= 10
-            ? Math.min(...currentHighScores.map(s => s.Score || s.score))
+            ? Math.min(...currentHighScores.map(s => Number(s.score)))
             : 0;
 
         if (currentHighScores.length < 10 || score > lowestHighScore) {
@@ -136,8 +159,34 @@ async function handleGameOver() {
                 fetchHighScores(); // Refresh leaderboard after successful submission
             }
         } else {
-            alert("Game Over! Unfortunately, your score didn’t make it to the top 10.");
+            console.log("Displaying Game Over message in overlay");
+        
+            // Show the overlay before appending the message
+            highScoresOverlay.classList.remove('hidden');
+        
+            // Safely get the message container
+            const gameOverMessage = document.getElementById('gameOverMessage');
+            if (!gameOverMessage) {
+                console.error('Error: #gameOverMessage element not found in the DOM.');
+                return;
+            }
+        
+            // Clear previous messages
+            gameOverMessage.innerHTML = '';
+        
+            // Create message div and apply CSS class
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('game-over-message'); // ✅ Apply CSS class
+            messageDiv.innerText = "Game Over! Unfortunately, your score didn’t make it to the top 10.";
+        
+            // Append the message to the dedicated container
+            gameOverMessage.appendChild(messageDiv);
+        
+            // Confirm in console
+            console.log("New game over message displayed.");
         }
+        
+        
     } catch (error) {
         console.error('Error handling game over:', error);
         alert('An error occurred while processing the high scores.');
@@ -151,7 +200,7 @@ function drawGameOver() {
     ctx.font = "30px Arial";
     ctx.fillText("Game Over!", boardWidth / 2 - 80, boardHeight / 2);
     ctx.font = "20px Arial";
-    ctx.fillText("Press Space to Restart", boardWidth / 2 - 110, boardHeight / 2 + 30);
+    ctx.fillText("Press Enter to Restart", boardWidth / 2 - 110, boardHeight / 2 + 30);
 }
 
 
@@ -169,10 +218,28 @@ document.addEventListener("keydown", (e) => {
     } else if (e.key === "ArrowRight" && velocityX !== -1) {
         velocityX = 1;
         velocityY = 0;
-    } else if (e.code === "Space" || e.key === " ")  {
+    } else if ((e.code === "Space" || e.key === " ") && highScoresOverlay.classList.contains('hidden')) {
+        //Restart the game with Space if overlay is hidden
+        startGame();
+    } else if (e.key === "Enter" && !highScoresOverlay.classList.contains("hidden")) {
+        // Start the game when Enter is pressed and overlay is hidden
         startGame();
     }
 });
+
+function displayHighScoresOverlay(scores) {
+    console.log("Displaying High Scores Overlay:", scores); // Debug log
+
+    if (!scores.length) {
+        highScoresList.innerHTML = "<p>No high scores yet!</p>";
+        return;
+    }
+
+    highScoresList.innerHTML = scores.map((score, index) =>
+        `<p>${index + 1}. ${score.name}: ${score.score}</p>`).join('');
+}
+
+
 
 async function submitScore(playerName, score) {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/score';
@@ -235,14 +302,14 @@ async function fetchHighScores() {
             };
         });
 
-        displayHighScores(); // Render leaderboard in DOM
+        displayHighScoresOverlay(highScores); // Render leaderboard in DOM
+
     } catch (error) {
         console.error('Error fetching high scores:', error);
         alert('Failed to fetch high scores. Check console for details.');
     }
 }
 
-// Start the Game
+// Get Highscores and then Start the Game
 fetchHighScores();
-startGame();  
-displayHighScores();
+

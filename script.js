@@ -7,7 +7,6 @@ const tileSize = 25;
 const highScoresOverlay = document.getElementById('highScoresOverlay');
 const highScoresList = document.getElementById('highScoresList');
 
-
 // Snake and Food
 let snake = [{ x: 5, y: 5 }];
 let food = { x: 10, y: 10 };
@@ -16,6 +15,8 @@ let food = { x: 10, y: 10 };
 let velocityX = 0;
 let velocityY = 0;
 let gameOver = false;
+let baseSpeed = 100; // Initial speed in milliseconds
+let speed = baseSpeed;
 let gameLoop;
 
 // Initialize as empty array; fetchHighScores will populate from API
@@ -32,10 +33,12 @@ function startGame() {
     snake = [{ x: 5, y: 5 }];
     velocityX = 1;
     velocityY = 0;
-    placeFood();
     gameOver = false;
+    //Resets spped on game start
+    speed = baseSpeed;
+    placeFood();
     clearInterval(gameLoop);
-    gameLoop = setInterval(update, 100);
+    gameLoop = setInterval(update, speed);
 }
 
 // Place Food
@@ -71,6 +74,7 @@ function update() {
     if (head.x === food.x && head.y === food.y) {
         snake.unshift(head); // Grow snake
         placeFood();
+        updateGameSpeed();
     } else {
         snake.pop(); // Remove tail
         snake.unshift(head); // Add new head
@@ -82,17 +86,64 @@ function update() {
 
 // Draw Game
 function draw() {
-    ctx.fillStyle = "black";
+    ctx.fillStyle = "black"
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
     // Draw Food
     ctx.fillStyle = "red";
-    ctx.fillRect(food.x * tileSize, food.y * tileSize, tileSize, tileSize);
+    ctx.beginPath();
+    ctx.arc(
+        food.x * tileSize + tileSize / 2,
+        food.y * tileSize + tileSize / 2,
+        tileSize / 2,
+        0, Math.PI * 2
+    );
+    ctx.fill();
 
-    // Draw Snake
-    ctx.fillStyle = "lime";
-    for (let part of snake) {
-        ctx.fillRect(part.x * tileSize, part.y * tileSize, tileSize, tileSize);
+    // Draw Snake with Gradient Effect
+    for (let i = 0; i < snake.length; i++) {
+        let part = snake[i];
+
+        // Create a gradient effect
+        let gradient = ctx.createLinearGradient(
+            part.x * tileSize, part.y * tileSize,
+            part.x * tileSize + tileSize, part.y * tileSize + tileSize
+        );
+        gradient.addColorStop(0, "lime");
+        gradient.addColorStop(1, "green");
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(
+            part.x * tileSize + tileSize / 2,
+            part.y * tileSize + tileSize / 2,
+            tileSize / 2,
+            0, Math.PI * 2
+        );
+        ctx.fill();
+
+        // Draw Eyes if it's the Head
+        if (i === 0) {
+            ctx.fillStyle = "black";
+            let eyeSize = tileSize / 6;
+            let offset = tileSize / 3;
+
+            ctx.beginPath();
+            ctx.arc(
+                part.x * tileSize + offset, 
+                part.y * tileSize + offset,
+                eyeSize, 0, Math.PI * 2
+            );
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(
+                part.x * tileSize + tileSize - offset, 
+                part.y * tileSize + offset,
+                eyeSize, 0, Math.PI * 2
+            );
+            ctx.fill();
+        }
     }
 
     // Draw Score
@@ -100,6 +151,16 @@ function draw() {
     ctx.font = "16px Arial";
     ctx.fillText("Your Score: " + (snake.length - 1), 10, 20);
 }
+
+function updateGameSpeed() {
+    speed = Math.max(baseSpeed - (snake.length - 1) * 4, 40); // Min speed cap at 50ms
+
+    clearInterval(gameLoop); // Stop the current game loop
+    gameLoop = setInterval(update, speed); // Restart with the updated speed
+
+    console.log(`Speed updated: ${speed}ms per tick`);
+}
+
 
 function displayHighScores() {
     const highScoreList = document.getElementById("highScoreList");

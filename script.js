@@ -10,11 +10,27 @@ const highScoresList = document.getElementById('highScoresList');
 // Snake and Food
 let snake = [{ x: 5, y: 5 }];
 let food = { x: 10, y: 10 };
-// Load the apple image once
-const appleImage = new Image();
-appleImage.src = "images/apple.png"; // Ensure this matches your file path
-appleImage.onload = () => console.log("Apple image loaded successfully");
-appleImage.onerror = () => console.error("Failed to load apple image");
+
+// Food Images
+const foodImages = [
+    "images/apple.png",
+    "images/burger.png",
+    "images/pizza.png",
+    "images/taco.png",
+    "images/chicken.png"
+];
+
+// Load all images into an object
+const foodImageObjects = foodImages.map(src => {
+    const img = new Image();
+    img.src = src;
+    img.onload = () => console.log(`${src} loaded successfully`);
+    img.onerror = () => console.error(`Failed to load ${src}`);
+    return img;
+});
+
+// Current food image
+let currentFoodImage = foodImageObjects[0]; // Default to first image
 
 
 // Game Logic
@@ -51,7 +67,11 @@ function startGame() {
 function placeFood() {
     food.x = Math.floor(Math.random() * (boardWidth / tileSize));
     food.y = Math.floor(Math.random() * (boardHeight / tileSize));
+
+    // Randomly select a food image
+    currentFoodImage = foodImageObjects[Math.floor(Math.random() * foodImageObjects.length)];
 }
+
 
 // Game Update Logic
 function update() {
@@ -97,16 +117,16 @@ function draw() {
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
     // Check if the apple image is loaded before drawing
-    if (appleImage.complete && appleImage.naturalWidth !== 0) {
+    if (currentFoodImage.complete && currentFoodImage.naturalWidth !== 0) {
         ctx.drawImage(
-            appleImage,
+            currentFoodImage,
             food.x * tileSize,
             food.y * tileSize,
             tileSize,
             tileSize
         );
     } else {
-        console.warn("Apple image not yet loaded, using fallback.");
+        console.warn("currentFoodImage not yet loaded, using fallback.");
         // Temporary fallback: Draw a red circle if image isn't ready
         ctx.fillStyle = "red";
         ctx.beginPath();
@@ -171,7 +191,6 @@ function draw() {
     ctx.fillText("Your Score: " + (snake.length - 1), 10, 20);
 }
 
-
 function updateGameSpeed() {
     speed = Math.max(baseSpeed - (snake.length - 1) * 4, 40); // Min speed cap at 50ms
 
@@ -180,7 +199,6 @@ function updateGameSpeed() {
 
     console.log(`Speed updated: ${speed}ms per tick`);
 }
-
 
 function displayHighScores() {
     const highScoreList = document.getElementById("highScoreList");
@@ -216,10 +234,6 @@ function updateHighScoreList(highScores) {
         highScoresOverlay.classList.remove("hidden");
     }
 }
-
-
-
-
 
 // Handle Game Over and High Scores
 // Handle Game Over and High Scores
@@ -300,7 +314,6 @@ async function handleGameOver() {
     }
 }
 
-
 // Draw Game Over Message
 function drawGameOver() {
     ctx.fillStyle = "white";
@@ -309,7 +322,6 @@ function drawGameOver() {
     ctx.font = "20px Arial";
     ctx.fillText("Press Enter to Restart", boardWidth / 2 - 110, boardHeight / 2 + 30);
 }
-
 
 // Handle Keyboard Input
 document.addEventListener("keydown", (e) => {
@@ -381,7 +393,6 @@ async function submitScore(playerName, score) {
         alert('Failed to submit score. Please try again.');
     }
 }
-
 async function fetchHighScores() {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/highscores';
 
@@ -421,7 +432,6 @@ async function initializeGame() {
     await fetchHighScores();  // Fetch scores first
     displayHighScoresOverlay(highScores);  // Then display them
 }
-
 
 initializeGame();
 

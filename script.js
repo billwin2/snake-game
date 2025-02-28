@@ -193,6 +193,32 @@ function displayHighScores() {
     });
 }
 
+function updateHighScoreList(highScores) {
+    const highScoresList = document.getElementById("highScoresList");
+
+    if (!highScoresList) {
+        console.error("High scores list element not found!");
+        return;
+    }
+
+    highScoresList.innerHTML = ""; // Clear previous scores
+
+    highScores.forEach((score, index) => {
+        const p = document.createElement("p");
+        p.textContent = `${index + 1}. ${score.name || "Unknown"}: ${score.score}`;
+        highScoresList.appendChild(p);
+    });
+
+    // Ensure the overlay is visible
+    const highScoresOverlay = document.getElementById('highScoresOverlay');
+    if (highScoresOverlay) {
+        highScoresOverlay.style.display = "block";
+        highScoresOverlay.classList.remove("hidden");
+    }
+}
+
+
+
 
 
 // Handle Game Over and High Scores
@@ -213,11 +239,11 @@ async function handleGameOver() {
 
         const data = await response.json();
         const currentHighScores = data.highScores || [];
+
+        //display highscores in the overlay
         displayHighScoresOverlay(currentHighScores);
         highScoresOverlay.classList.remove('hidden');
 
-        // Display high scores in the overlay
-        displayHighScoresOverlay(currentHighScores);
         // Show overlay
         if (highScoresOverlay) {
             highScoresOverlay.style.display = 'block';
@@ -317,10 +343,9 @@ function displayHighScoresOverlay(scores) {
     }
 
     highScoresList.innerHTML = scores.map((score, index) =>
-        `<p>${index + 1}. ${score.name}: ${score.score}</p>`).join('');
+        `<p>${index + 1}. ${score.name || score.playerName || "Unknown"}: ${score.score}</p>`
+    ).join('');
 }
-
-
 
 async function submitScore(playerName, score) {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/score';
@@ -361,36 +386,43 @@ async function fetchHighScores() {
     const apiUrl = 'https://ls4eez6wgb.execute-api.us-east-2.amazonaws.com/prod/highscores';
 
     try {
-        const response = await fetch(apiUrl);
+        console.log("Fetching high scores from:", apiUrl);
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
+        const response = await fetch(apiUrl);
+        const textData = await response.text();
+        console.log("Raw API Response:", textData);
+
+        const data = JSON.parse(textData);
+        console.log("Parsed API Response:", data);
+
+        if (!Array.isArray(data.highScores)) {
+            console.error("Unexpected format:", data);
+            return;
         }
 
-        const data = await response.json();
-        console.log('Fetched High Scores Raw:', data.highScores); // Log raw response
+        // 🛠️ Fix: Ensure names are correctly mapped
+        highScores = data.highScores.map(score => ({
+            name: score.name || score.playerName || "Unknown",
+            score: Number(score.score) || 0
+        }));
 
-        // Map and parse scores properly
-        highScores = data.highScores.map(score => {
-            const playerName = score.playerName || "Unknown";
-            const playerScore = typeof score.score === 'number' ? score.score : parseInt(score.score, 10) || 0;
+        console.log("Processed High Scores:", highScores);
 
-            console.log(`Parsed Score - Name: ${playerName}, Score: ${playerScore}`);
-
-            return {
-                name: playerName,
-                score: playerScore
-            };
-        });
-
-        displayHighScoresOverlay(highScores); // Render leaderboard in DOM
+        updateHighScoreList(highScores);
+        displayHighScoresOverlay(highScores); // Ensure overlay updates at the right time
 
     } catch (error) {
-        console.error('Error fetching high scores:', error);
-        alert('Failed to fetch high scores. Check console for details.');
+        console.error("Error fetching high scores:", error);
     }
 }
 
 // Get Highscores and then Start the Game
-fetchHighScores();
+async function initializeGame() {
+    await fetchHighScores();  // Fetch scores first
+    displayHighScoresOverlay(highScores);  // Then display them
+}
+
+
+initializeGame();
+
 

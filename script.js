@@ -10,6 +10,12 @@ const highScoresList = document.getElementById('highScoresList');
 // Snake and Food
 let snake = [{ x: 5, y: 5 }];
 let food = { x: 10, y: 10 };
+// Load the apple image once
+const appleImage = new Image();
+appleImage.src = "images/apple.png"; // Ensure this matches your file path
+appleImage.onload = () => console.log("Apple image loaded successfully");
+appleImage.onerror = () => console.error("Failed to load apple image");
+
 
 // Game Logic
 let velocityX = 0;
@@ -85,20 +91,33 @@ function update() {
 
 
 // Draw Game
+// Draw Game
 function draw() {
-    ctx.fillStyle = "black"
+    ctx.fillStyle = "black";
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
-    // Draw Food
-    ctx.fillStyle = "red";
-    ctx.beginPath();
-    ctx.arc(
-        food.x * tileSize + tileSize / 2,
-        food.y * tileSize + tileSize / 2,
-        tileSize / 2,
-        0, Math.PI * 2
-    );
-    ctx.fill();
+    // Check if the apple image is loaded before drawing
+    if (appleImage.complete && appleImage.naturalWidth !== 0) {
+        ctx.drawImage(
+            appleImage,
+            food.x * tileSize,
+            food.y * tileSize,
+            tileSize,
+            tileSize
+        );
+    } else {
+        console.warn("Apple image not yet loaded, using fallback.");
+        // Temporary fallback: Draw a red circle if image isn't ready
+        ctx.fillStyle = "red";
+        ctx.beginPath();
+        ctx.arc(
+            food.x * tileSize + tileSize / 2,
+            food.y * tileSize + tileSize / 2,
+            tileSize / 2,
+            0, Math.PI * 2
+        );
+        ctx.fill();
+    }
 
     // Draw Snake with Gradient Effect
     for (let i = 0; i < snake.length; i++) {
@@ -151,6 +170,7 @@ function draw() {
     ctx.font = "16px Arial";
     ctx.fillText("Your Score: " + (snake.length - 1), 10, 20);
 }
+
 
 function updateGameSpeed() {
     speed = Math.max(baseSpeed - (snake.length - 1) * 4, 40); // Min speed cap at 50ms

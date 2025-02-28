@@ -32,7 +32,6 @@ const foodImageObjects = foodImages.map(src => {
 // Current food image
 let currentFoodImage = foodImageObjects[0]; // Default to first image
 
-
 // Game Logic
 let velocityX = 0;
 let velocityY = 0;
@@ -72,7 +71,6 @@ function placeFood() {
     currentFoodImage = foodImageObjects[Math.floor(Math.random() * foodImageObjects.length)];
 }
 
-
 // Game Update Logic
 function update() {
     if (gameOver) return;
@@ -109,8 +107,6 @@ function update() {
     draw();
 }
 
-
-// Draw Game
 // Draw Game
 function draw() {
     ctx.fillStyle = "black";
@@ -266,7 +262,6 @@ async function handleGameOver() {
             console.error("Error: #highScoresOverlay element not found in the DOM.");
         }
         
-
         // Determine if the score qualifies for the top 10
         const lowestHighScore = currentHighScores.length >= 10
             ? Math.min(...currentHighScores.map(s => Number(s.score)))

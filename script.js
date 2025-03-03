@@ -112,7 +112,7 @@ function draw() {
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, boardWidth, boardHeight);
 
-    // Check if the apple image is loaded before drawing
+    // Check if the food image is loaded before drawing
     if (currentFoodImage.complete && currentFoodImage.naturalWidth !== 0) {
         ctx.drawImage(
             currentFoodImage,
@@ -320,21 +320,18 @@ function drawGameOver() {
 
 // Handle Keyboard Input
 document.addEventListener("keydown", (e) => {
-    if (e.key === "ArrowUp" || e.key === "w" && velocityY !== 1) {
+    if ((e.key === "ArrowUp" || e.key === "w") && velocityY !== 1) {
         velocityX = 0;
         velocityY = -1;
-    } else if (e.key === "ArrowDown" || e.key === "s" && velocityY !== -1) {
+    } else if ((e.key === "ArrowDown" || e.key === "s") && velocityY !== -1) {
         velocityX = 0;
         velocityY = 1;
-    } else if (e.key === "ArrowLeft" || e.key === "a" && velocityX !== 1) {
+    } else if ((e.key === "ArrowLeft" || e.key === "a") && velocityX !== 1) {
         velocityX = -1;
         velocityY = 0;
-    } else if (e.key === "ArrowRight" || e.key === "d" && velocityX !== -1) {
+    } else if ((e.key === "ArrowRight" || e.key === "d") && velocityX !== -1) {
         velocityX = 1;
         velocityY = 0;
-    } else if ((e.code === "Space" || e.key === " ") && highScoresOverlay.classList.contains('hidden')) {
-        //Restart the game with Space if overlay is hidden
-        startGame();
     } else if (e.key === "Enter" && !highScoresOverlay.classList.contains("hidden")) {
         // Start the game when Enter is pressed and overlay is hidden
         startGame();

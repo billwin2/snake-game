@@ -231,6 +231,22 @@ function updateHighScoreList(highScores) {
     }
 }
 
+function halveSpeedTemporarily() {
+    console.log("Speed reduced temporarily!");
+    
+    // Cut speed in half
+    let newSpeed = speed * 2;
+    clearInterval(gameLoop);
+    gameLoop = setInterval(update, newSpeed);
+
+    // Restore speed after 3 seconds
+    setTimeout(() => {
+        console.log("Speed restored!");
+        clearInterval(gameLoop);
+        gameLoop = setInterval(update, speed);
+    }, 3000); // 3-second effect duration
+}
+
 // Handle Game Over and High Scores
 // Handle Game Over and High Scores
 async function handleGameOver() {
@@ -335,6 +351,8 @@ document.addEventListener("keydown", (e) => {
     } else if (e.key === "Enter" && !highScoresOverlay.classList.contains("hidden")) {
         // Start the game when Enter is pressed and overlay is hidden
         startGame();
+    } else if (e.key.toLowerCase() ==="x") {
+        halveSpeedTemporarily();
     }
 });
 

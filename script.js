@@ -244,7 +244,7 @@ function halveSpeedTemporarily() {
         console.log("Speed restored!");
         clearInterval(gameLoop);
         gameLoop = setInterval(update, speed);
-    }, 3000); // 3-second effect duration
+    }, 30000); // 30-second effect duration
 }
 
 // Handle Game Over and High Scores

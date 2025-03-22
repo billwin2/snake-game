@@ -9,13 +9,20 @@
 </head>
 <body>
     <h1>Snake Game</h1>
-    <canvas id="gameCanvas" width="600" height="600" aria-label="Snake Game Canvas"></canvas>
-    <div id="highScoresOverlay">
-        <h1>HIGH SCORES</h1>
-        <div id="highScoresList"></div>
-        <div id="gameOverMessage"></div>
-        <p>Press Enter to Start</p>
+   
+
+    <div class="highScoresWrapper">
+        <canvas id="gameCanvas" width="600" height="600" aria-label="Snake Game Canvas"></canvas>
+        <div id="highScoresOverlay">
+            <div class="highScoreContent">
+                <h1>HIGH SCORES</h1>
+            <div id="highScoresList"></div>
+            <div id="gameOverMessage"></div>
+            <p>Press Enter to Start</p>
+            </div>
+        </div>
     </div>
+    
     </div>
     <p>Use Arrow Keys or WASD to Move | Press Enter to Restart</p>
     <script src="script.js"></script>
